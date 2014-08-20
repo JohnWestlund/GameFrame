@@ -30,14 +30,6 @@ byte getIndex(byte x, byte y);
 void clearStripBuffer();
 void buttonDebounce();
 void readIniFile();
-void drawPaddle();
-void breakoutLoop();
-void chdirFirework();
-boolean winCheck();
-byte getScreenIndex(byte x, byte y);
-void swapYdirection();
-void swapXdirection();
-float degToRad(float deg);
 uint16_t read16(SdFile& f);
 uint32_t read32(SdFile& f);
 void printFreeRAM();
@@ -76,7 +68,6 @@ const uint8_t buttonSetupPin = 5;  // "Setup" button
 #define STATUS_LED 3
 
 //Enable prints?
-//Due to memory contraints Breakout is disabled in debugMode
 const boolean debugMode = false;
 
 //System Setup
@@ -90,13 +81,9 @@ boolean
   singleGraphic = false, // single BMP file
   abortImage = false, // image is corrupt; abort, retry, fail?
   verboseOutput = false, // output extra info to LEDs
-  statusLedState = false, // flicker tech
-  breakout = false, // breakout playing?
-  ballMoving = false,
-  gameInitialized = false;
+  statusLedState = false; // flicker tech
 byte
   playMode = 0, // 0 = sequential, 1 = random, 2 = pause animations
-  gameMode = 1, // breakout, ???
   brightness = 4, // LED brightness
   brightnessMultiplier = 10, // DO NOT CHANGE THIS
   cycleTimeSetting = 2, // time before next animation: 1=10 secs, 2=30 secs, 3=1 min... 8=infinity
@@ -104,10 +91,6 @@ byte
   setupMode = 0, // 0 = brightmess, 1 = play mode, 2 = cycle time
   lowestMem = 250, // storage for lowest number of available bytes
   logoPlayed = 0, // hack for playing logo correctly reardless of playMode
-  paddleIndex = 230,
-  ballX = 112,
-  ballY = 208,
-  ballIndex = 216,
   currentSecond = 255; // current second
 int
   secondCounter = 0, // counts up every second
@@ -123,8 +106,7 @@ int
   offsetX = 0, // for translating images x pixels
   offsetY = 0, // for translating images y pixels
   imageWidth = 0,
-  imageHeight = 0,
-  ballAngle;
+  imageHeight = 0;
 unsigned long
   lastTime = 0, // yep
   drawTime = 0, // debugging time to read from sd
@@ -400,25 +382,7 @@ void statusLedFlicker()
   }
 }
 
-void loop() {
-
-  if (breakout == false)
-  {
-    mainLoop();
-  }
-  
-  else
-  {
-    if (!debugMode) breakoutLoop();
-    if (breakout == false)
-    {
-      nextImage();
-      drawFrame();
-    }
-  }
-}
-
-void mainLoop()
+void loop()
 {
   buttonDebounce();
   now = rtc.now();
@@ -486,45 +450,6 @@ void mainLoop()
         strcat(timeFile, timeChar);
         strcat(timeFile, ".bmp");
         bmpDraw(timeFile, 0, 0);
-      }
-
-      // breakout time
-      else if (setupMode == 3)
-      {
-        setupActive = false;
-        if (EEPROM.read(0) != brightness)
-        {
-          EEPROM.write(0, brightness);
-        }
-        if (EEPROM.read(1) != playMode)
-        {
-          EEPROM.write(1, playMode);
-        }
-        if (EEPROM.read(2) != cycleTimeSetting)
-        {
-          EEPROM.write(2, cycleTimeSetting);
-        }
-        
-        buttonTime = millis();
-        breakout = true;
-        gameInitialized = false;
-        buttonEnabled = false;
-
-        char tmp[23];
-        strcpy_P(tmp, PSTR("/00system/breakout.bmp"));
-        bmpDraw(tmp, 0, 0);
-
-        paddleIndex = 230,
-        ballX = 112,
-        ballY = 208,
-        ballIndex = 216;
-        holdTime = 0;
-        fileIndex = 0;
-        strip.setPixelColor(ballIndex, strip.Color(175, 255, 15));
-        strip.setPixelColor(paddleIndex, strip.Color(200, 200, 200));
-        strip.setPixelColor(paddleIndex + 1, strip.Color(200, 200, 200));
-        strip.setPixelColor(paddleIndex + 2, strip.Color(200, 200, 200));
-        strip.show();
       }
     }
   }
@@ -636,7 +561,7 @@ void mainLoop()
   }
   
   // currently playing images?
-  if (setupActive == false && breakout == false)
+  if (!setupActive)
   {
     // advance counter
     if (now.second() != currentSecond)
@@ -1417,268 +1342,6 @@ void readIniFile()
   }
   
   if (ini.isOpen()) ini.close();
-}
-
-// breakout code
-void drawPaddle()
-{
-  strip.setPixelColor(paddleIndex, strip.Color(200, 200, 200));
-  strip.setPixelColor(paddleIndex+1, strip.Color(200, 200, 200));
-  strip.setPixelColor(paddleIndex+2, strip.Color(200, 200, 200));
-  strip.show();
-}
-
-void breakoutLoop()
-{
-  if (holdTime > 0) holdTime--;
-  if (fileIndex > 0) fileIndex--;
-  
-  if (buttonEnabled == false)
-  {
-    if (millis() > buttonTime + 50) buttonEnabled = true;
-  }
-  
-  // setup button
-  if (digitalRead(buttonSetupPin) == LOW && holdTime == 0 && paddleIndex < 237 && gameInitialized == true && buttonEnabled == true)
-  {
-    paddleIndex++;
-    strip.setPixelColor(paddleIndex-1, strip.Color(0, 0, 0));
-    drawPaddle();
-    holdTime = 3000;
-    if (ballMoving == false)
-    {
-      ballMoving = true;
-      swapTime = 5000;
-      ballAngle = random(190, 225);
-    }
-  }
-  
-  // next button
-  else if (digitalRead(buttonNextPin) == LOW && holdTime == 0 && paddleIndex > 224 && buttonEnabled == true)
-  {
-    paddleIndex--;
-    strip.setPixelColor(paddleIndex+3, strip.Color(0, 0, 0));
-    drawPaddle();
-    holdTime = 3000;
-    if (ballMoving == false)
-    {
-      ballMoving = true;
-      swapTime = 5000;
-      ballAngle = random(135,170);
-    }
-  }
-  
-  else if (digitalRead(buttonNextPin) == HIGH && gameInitialized == false) gameInitialized = true;
-
-  // ball logic
-  if (ballMoving == true && fileIndex == 0)
-  {
-    fileIndex = swapTime;
-    strip.setPixelColor(ballIndex, strip.Color(0, 0, 0));
-
-    // did the player lose?
-    if (ballIndex >= 239)
-    {
-      ballMoving = false;
-      breakout = false;
-      Serial.print(F("Lose!!!"));
-      for (int c=250; c>=0; c=c-15)
-      {
-        for (int i=0; i<256; i++)
-        {
-          byte r = 0;
-          byte g = 0;
-          byte b = 0;
-          if (random(0, 2))
-          {
-            r = c;
-          }
-          if (random(0, 2))
-          {
-            g = c;
-          }
-          if (random(0, 2))
-          {
-            b = c;
-          }
-          strip.setPixelColor(i, strip.Color(r, g, b));
-        }
-        strip.show();
-      }
-    }
-    
-    // ball still in play
-    else
-    {
-      if (ballAngle < 180)
-      {
-        if ((ballX + sin(degToRad(ballAngle)) * 16) +.5 > 256) swapXdirection();
-      }
-      else
-      {
-        if ((ballX + sin(degToRad(ballAngle)) * 16) +.5 < 0) swapXdirection();
-      }
-      ballX = ballX + sin(degToRad(ballAngle)) * 16 +.5;
-  
-      if (ballAngle > 90 && ballAngle < 270)
-      {
-        if ((ballY + cos(degToRad(ballAngle)) * 16) +.5 < 0) swapYdirection();
-      }
-      else
-      {
-        if ((ballY + cos(degToRad(ballAngle)) * 16) +.5 > 256) swapYdirection();
-      }
-      ballY = ballY + cos(degToRad(ballAngle)) * 16 +.5;
-      ballIndex = getScreenIndex(ballX, ballY);
-      
-      // paddle hit?
-      if (ballIndex == paddleIndex or ballIndex == paddleIndex+1 or ballIndex == paddleIndex+2)
-      {
-        // move the ball back in time one step
-        ballX = ballX + ((sin(degToRad(ballAngle)) * 16 +.5) *-1);
-        ballY = ballY + ((cos(degToRad(ballAngle)) * 16 +.5) *-1);
-        swapYdirection();
-        if (ballIndex == paddleIndex)
-        {
-          ballAngle = random(115,170);
-        }
-        else if (ballIndex == paddleIndex+2)
-        {
-          ballAngle = random(190, 245);
-        }
-        ballIndex = getScreenIndex(ballX, ballY);
-        strip.setPixelColor(paddleIndex, strip.Color(200, 200, 200));
-        strip.setPixelColor(paddleIndex+1, strip.Color(200, 200, 200));
-        strip.setPixelColor(paddleIndex+2, strip.Color(200, 200, 200));
-      }
-      
-      // brick hit?
-      if (strip.getPixelColor(ballIndex) > 0)
-      {
-        // speed up and change direction
-        swapTime = swapTime - 30;
-        swapYdirection();
-        if (winCheck())
-        {
-          Serial.print(F("Win!!!"));
-          ballMoving = false;
-          breakout = false;
-          chdirFirework();
-          char bmpFile[7]; // 2-digit number + .bmp + null byte
-          for (byte fileIndex=0; fileIndex<83; fileIndex++)
-          {
-            itoa(fileIndex, bmpFile, 10);
-            strcat(bmpFile, ".bmp");
-            bmpDraw(bmpFile, 0, 0);
-          }
-        }
-      }
-      
-      // check for preceeding win
-      if (breakout == true)
-      {
-        strip.setPixelColor(ballIndex, strip.Color(175, 255, 15));
-        strip.show();
-      }
-    }
-  }
-}
-
-void chdirFirework()
-{
-  char tmp[20];
-  strcpy_P(tmp, PSTR("/00system/firework"));
-  sd.chdir(tmp);
-}
-
-boolean winCheck()
-{
-  byte numberOfLitPixels = 0;
-  for (byte i=0; i<255; i++)
-  {
-    if (strip.getPixelColor(i) > 0)
-    {
-      numberOfLitPixels++;
-    }
-  }
-  if (numberOfLitPixels <= 4)
-  {
-    return true;
-  }
-}
-
-byte getScreenIndex(byte x, byte y)
-{
-  byte screenX = x / 16;
-  byte screenY = y / 16;
-  byte index;
-  index = screenY * 16;
-  if (screenY == 0)
-  {
-    index = 15 - screenX;
-  }
-  else if (screenY % 2 != 0)
-  {
-    index = (screenY * 16) + screenX;
-  }
-  else
-  {
-    index = (screenY * 16 + 15) - screenX;
-  }
-  return index;
-}
-
-void swapYdirection()
-{
-  if (ballAngle > 90 && ballAngle < 270)
-  {
-    if (ballAngle > 180)
-    {
-      ballAngle = 360 - (ballAngle - 180);
-    }
-    else
-    {
-      ballAngle = 90 - (ballAngle - 90);
-    }
-  }
-  else
-  {
-    if (ballAngle < 90)
-    {
-      ballAngle = 90 + (90 - ballAngle);
-    }
-    else
-    {
-      ballAngle = 180 + (360 - ballAngle);
-    }
-  }
-}
-
-void swapXdirection()
-{
-  if (ballAngle < 180)
-  {
-    if (ballAngle < 90)
-    {
-      ballAngle = 270 + (90 - ballAngle);
-    }
-    else ballAngle = 270 - (ballAngle - 90);
-  }
-  else
-  {
-    if (ballAngle > 270)
-    {
-      ballAngle = 360 - ballAngle;
-    }
-    else ballAngle = 180 - (ballAngle - 180);
-  }
-}
-
-float degToRad(float deg)
-{
-  float result;
-  result = deg * PI / 180;
-  return result;
 }
 
 // These read 16- and 32-bit types from the SD card file.
