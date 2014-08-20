@@ -65,6 +65,9 @@ class Adafruit_NeoPixel {
   uint32_t
     getPixelColor(uint16_t n) const;
 
+  // Return the raw pixel buffer.
+  uint8_t *getPixels() { return pixels; }
+
  private:
 
   const uint16_t
