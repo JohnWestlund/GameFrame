@@ -4,6 +4,7 @@
 #include <SdFat.h>
 #include <IniFileLite.h>
 #include <Adafruit_NeoPixel.h>
+#include <Arduino.h>
 
 /***************************************************
   BMP parsing code based on example sketch for the Adafruit 
@@ -13,6 +14,36 @@
   "Probably Random" number generator from:
   https://gist.github.com/endolith/2568571
  ****************************************************/
+void setup(void);
+void testScreen();
+void sdErrorMessage();
+void yellowDot(byte x, byte y);
+void setCycleTime();
+void statusLedFlicker();
+void loop();
+void mainLoop();
+void nextImage();
+void drawFrame();
+void refreshImageDimensions(char *filename);
+void bmpDraw(char *filename, uint8_t x, uint8_t y);
+byte getIndex(byte x, byte y);
+void clearStripBuffer();
+void buttonDebounce();
+void readIniFile();
+void drawPaddle();
+void breakoutLoop();
+void chdirFirework();
+boolean winCheck();
+byte getScreenIndex(byte x, byte y);
+void swapYdirection();
+void swapXdirection();
+float degToRad(float deg);
+uint16_t read16(SdFile& f);
+uint32_t read32(SdFile& f);
+void printFreeRAM();
+int freeRam ();
+byte rotl(const byte value, int shift);
+void wdtSetup();
 
 #define SD_CS    9  // Chip select line for SD card
 SdFat sd; // set filesystem
