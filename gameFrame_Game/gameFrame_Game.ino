@@ -631,13 +631,19 @@ bool drawFrame()
   myFile.seekCur(frameHeaderSize);
 
   // Read the frame.
-  int bytesRead = myFile.read(strip.getPixels(), 768);
+  uint8_t *p = strip.getPixels();
+  int bytesRead = myFile.read(p, 768);
   if(bytesRead < 768)
   {
     Serial.println(F("Closing image"));
     myFile.close();
     return false;
   }
+
+  // Apply brightness.
+  int brightnessFactor = (brightness * brightnessMultiplier) + 1;
+  for(uint8_t *value = p; value < p + 768; ++value)
+      *value = ((*value) * brightnessFactor) >> 8;
 
   // Adjust the hold time down to compensate for clock drift, such as the issue mentioned below.
   // The value of 8 was found by comparing to an external render at 30 FPS.  It's as accurate as
