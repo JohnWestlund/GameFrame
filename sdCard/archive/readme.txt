@@ -1,6 +1,15 @@
 Archive of art on LedSeq.com
 
-Shell script included to convert 16x16 GIFs into BMPs
+Shell script included to convert 16x16 GIFs into BMPs under utilities directory
+
+Convert list.txt into links for current directory:
+$ while read LINK; do ln -vnsf ../archive/$LINK "$(echo $LINK | tr '/' '-')"; done < list.txt
+
+Clean up current directory symlinks:
+$ find . -maxdepth 1 -type l -delete
+
+Copy over current artwork
+$ cp -prvH * /Volumes/NO\ NAME/
 
 Debug tips:
 1. Color depth should be 24 bits, if it is 32 turn off alpha channel. With ImageMagick:
@@ -15,3 +24,5 @@ Debug tips:
   $ for I in {0..99}; do mv ./$(printf '%03d.bmp' $I) ./$I.bmp; done # 22leading 0
 
 4. Art directories on Game Frame can not start with 0 or they will not load
+
+5. SD Card needs to be formatted FAT32 to handle long filenames
