@@ -3,3 +3,4 @@ Original GameFrame SD Content from:
 
 Additional art from:
   https://github.com/hsiboy/PixelFrame.git
+  https://ledseq.com

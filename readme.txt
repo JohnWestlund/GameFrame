@@ -16,3 +16,7 @@ Copy `libraries` directory into Sketchbook directory to build.
 Board is an Arduino Uno
 
 Clock is the standard firmware. Game builds slightly too large to be useable.
+
+Other resources:
+  OSX Video to GameFrame art conversion:
+    https://github.com/ghyde/gfx2gf
