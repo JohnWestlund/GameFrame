@@ -177,7 +177,7 @@ misc/Snoopy
 misc/SpinIcon
 mario/Spiny
 misc/Spirographred
-misc/Storm
+misc/Storm-2
 misc/Supernova
 misc/Tested
 matrix/high
@@ -198,6 +198,7 @@ misc/box1
 bubblebobble/bub
 bubblebobble/bub-bubbled
 bubblebobble/bub-zenchan-bob
+bubblebobble/pon
 misc/color-wire
 misc/colorsqr
 mario/crab
@@ -262,6 +263,7 @@ maniacmansion/intro
 mario/luigiwalk
 mario/superkoopa
 mario/1up-rainbow
+mario/1up
 mario/lv1-1
 megaman/mm2-arrive
 megaman/mm2-hair
