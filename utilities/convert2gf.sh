@@ -3,8 +3,9 @@
 GIF="$1"
 #ALT_HOLD="$2"
 MFRAMETIME="$2"
+BG="rgb(0,0,0)"
 ALT_BG="$3"
-MINFT=5
+MINFT=4
 
 
 TMPDIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'gifconvert')
@@ -18,13 +19,21 @@ if [[ "$SIZE" != "16 x 16" ]]; then
   #convert "$GIF" -resize 16x16\! -coalesce -type truecolor $TMPDIR/%d.bmp
   #exit 1
 fi
+WIDTH=$(echo $SIZE | awk '{print $1}')
+HEIGHT=$(echo $SIZE | awk '{print $3}')
 
+echo '#######' $(identify -format "%T " "$GIF")
 frametime=($(identify -format "%T " "$GIF"))
 
 if [ ! -z "$MFRAMETIME" ]; then
   for I in ${!frametime[@]}; do
     echo -n "Increasing frame $I time from ${frametime[$I]} to "
-    frametime[$I]=$((${frametime[$I]}*$MFRAMETIME))
+    if [ ${frametime[$I]} -le 0 ]; then
+      [ -z "$MFRAMETIME" ] && MFRAMETIME=40
+      frametime[$I]=$MFRAMETIME
+    else
+      frametime[$I]=$((${frametime[$I]}*$MFRAMETIME))
+    fi
     echo ${frametime[$I]}
   done
 fi
@@ -42,9 +51,9 @@ while true; do
     cs=$((${frametime[$I]}%${base_ft}+${cs}))
     [ ! -z "$d" ] && echo ds: $((${frametime[$I]}/${base_ft}+${ds})) = ${frametime[$I])} '/' ${base_ft} '+' ${ds}
     ds=$((${frametime[$I]}/${base_ft}+${ds}))
-    [ ${base_ft} -eq 100 ] && echo -n "${frametime[$I]}, "
+    [ ${base_ft} -eq $base_ft_orig ] && echo -n "${frametime[$I]}, "
   done
-  [ ${base_ft} -eq 100 ] && echo -e '\b\b'
+  [ ${base_ft} -eq $base_ft_orig ] && echo -e '\b\b'
 
   if [ $ds -eq 0 ] || [ $cs -eq 0 ] && [ $ds -gt 1 ] && [ $try_higher -eq 1 ]; then
     [ $cs -eq 0 ] && [ $ds -ne 1 ] && [ $try_higher -eq 1 ] && ds=0 && try_higher=0
@@ -56,7 +65,9 @@ while true; do
 
     if [ $ft_max -gt $MINFT ]; then
       [ ! -z "$d" ] && echo gt $MINFT
-      [ $base_ft -eq 500 ] && exit
+
+      # prevent reseting to a value we've already checked
+      [ $ft_max -lt $base_ft_orig ] && continue
       base_ft=$ft_max
       echo Reset base frame time to $base_ft
       cs=0
@@ -91,11 +102,22 @@ for frame in ${!frametime[@]}; do
 
   for frame_copy in $(seq 0 $(($copies-1))); do
     if [ $frame_copy -lt 0 ]; then continue; fi
-#    cp -v $TMPDIR/${frame}.bmp ./$((${frame_copy}+${fc})).bmp
-      BG="rgb(0,0,0)"
-#    convert -size 16x16 xc:"${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten ./$((${frame_copy}+${fc})).bmp
-     convert -size 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
-    # convert -resize 16x16 -gravity center -extent 16x16 -background "rgb(1000,0,0)" $TMPDIR/${frame}.bmp -layers flatten ./$((${frame_copy}+${fc})).bmp
+     # consider -scale or -sample instead of adaptive-resize
+     # if one dimension is larger and one small -- there could be issues with a resize
+    # if [[ check if width and height are >= 16 ]]; then
+    #   # art is too large, scale down
+    #   convert -sample 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
+    # else
+    #   # art is too small, scale up
+    #   if [[ test if dimensions are 2 or 4 or 8 (e.g. dividd into 16) ]]; then
+    #   convert -scale 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
+    # else
+    #   # art is too small dimensions don't scale well, pad
+    #   convert -size 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
+    #   fi
+    # fi
+     # default action is to sample down to 16x16 -- smaller art can get fuzzy. Use one of the above scale up commands instead
+     convert -sample 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
   done
   if [ $frame_copy -lt 0 ]; then frame_copy=0; fi
   fc=$((${fc}+${frame_copy}+1))
