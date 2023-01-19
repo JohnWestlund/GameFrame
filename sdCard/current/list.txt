@@ -72,10 +72,10 @@ lemmings/digger
 lemmings/climber
 lemmings/splat
 zelda/BuzzBlob
-zelda/Bubble
+zelda/TLoZ_Bubble
+zelda/LttP_Bubble
 zelda/Armos
-zelda/Bubble
-zelda/Bubble_Blue
+zelda/TLoZ_Bubble_Blue
 zelda/Darknut_Blue
 zelda/Darknut_Red
 zelda/Gel
