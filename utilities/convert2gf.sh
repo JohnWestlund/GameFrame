@@ -19,18 +19,12 @@ if [[ "$SIZE" != "16 x 16" ]]; then
   #exit 1
 fi
 
-echo '#######' $(identify -format "%T " "$GIF")
 frametime=($(identify -format "%T " "$GIF"))
 
 if [ ! -z "$MFRAMETIME" ]; then
   for I in ${!frametime[@]}; do
     echo -n "Increasing frame $I time from ${frametime[$I]} to "
-    if [ ${frametime[$I]} -le 0 ]; then
-      [ -z "$MFRAMETIME" ] && MFRAMETIME=40
-      frametime[$I]=$MFRAMETIME
-    else
-      frametime[$I]=$((${frametime[$I]}*$MFRAMETIME))
-    fi
+    frametime[$I]=$((${frametime[$I]}*$MFRAMETIME))
     echo ${frametime[$I]}
   done
 fi
@@ -48,9 +42,9 @@ while true; do
     cs=$((${frametime[$I]}%${base_ft}+${cs}))
     [ ! -z "$d" ] && echo ds: $((${frametime[$I]}/${base_ft}+${ds})) = ${frametime[$I])} '/' ${base_ft} '+' ${ds}
     ds=$((${frametime[$I]}/${base_ft}+${ds}))
-    [ ${base_ft} -eq $base_ft_orig ] && echo -n "${frametime[$I]}, "
+    [ ${base_ft} -eq 100 ] && echo -n "${frametime[$I]}, "
   done
-  [ ${base_ft} -eq $base_ft_orig ] && echo -e '\b\b'
+  [ ${base_ft} -eq 100 ] && echo -e '\b\b'
 
   if [ $ds -eq 0 ] || [ $cs -eq 0 ] && [ $ds -gt 1 ] && [ $try_higher -eq 1 ]; then
     [ $cs -eq 0 ] && [ $ds -ne 1 ] && [ $try_higher -eq 1 ] && ds=0 && try_higher=0
@@ -62,9 +56,7 @@ while true; do
 
     if [ $ft_max -gt $MINFT ]; then
       [ ! -z "$d" ] && echo gt $MINFT
-
-      # prevent reseting to a value we've already checked
-      [ $ft_max -lt $base_ft_orig ] && continue
+      [ $base_ft -eq 500 ] && exit
       base_ft=$ft_max
       echo Reset base frame time to $base_ft
       cs=0
@@ -102,9 +94,7 @@ for frame in ${!frametime[@]}; do
 #    cp -v $TMPDIR/${frame}.bmp ./$((${frame_copy}+${fc})).bmp
       BG="rgb(0,0,0)"
 #    convert -size 16x16 xc:"${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten ./$((${frame_copy}+${fc})).bmp
-     #convert -size 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
-     # consider -scale or -sample instead of adaptive-resize
-     convert -adaptive-resize 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
+     convert -size 16x16 -gravity center -extent 16x16 -background "${ALT_BG:-$BG}" $TMPDIR/${frame}.bmp -layers flatten -type truecolor ./$((${frame_copy}+${fc})).bmp
     # convert -resize 16x16 -gravity center -extent 16x16 -background "rgb(1000,0,0)" $TMPDIR/${frame}.bmp -layers flatten ./$((${frame_copy}+${fc})).bmp
   done
   if [ $frame_copy -lt 0 ]; then frame_copy=0; fi
