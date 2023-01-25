@@ -5,7 +5,7 @@ misc/BeauPat
 misc/Birdflight
 mario/nes-block
 doom/BlueKeyCard
-mario/Bob-Ombs
+mario/Bob-Omb
 mario/Boo
 mario/BulletBill-alt
 castlevania
